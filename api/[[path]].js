@@ -47,10 +47,6 @@ Sitemap: ${siteUrl}/sitemap.xml`;
     });
   }
 
-  if (incomingUrl.pathname.startsWith("/api/")) {
-    return fetch(request);
-  }
-
   const proxyUrl = new URL(request.url);
   proxyUrl.hostname = "regruha-terminal-core.base44.app";
   proxyUrl.searchParams.set("v", "2");
@@ -63,7 +59,6 @@ Sitemap: ${siteUrl}/sitemap.xml`;
   });
 
   const contentType = upstreamResponse.headers.get("content-type") || "";
-
   let body = await upstreamResponse.text();
 
   if (contentType.includes("text/html")) {
@@ -115,11 +110,6 @@ Sitemap: ${siteUrl}/sitemap.xml`;
     body = body.replace(
       /<span[^>]*class="[^"]*font-mono[^"]*text-\[10px\][^"]*tracking-widest[^"]*text-gold[^"]*"[^>]*>[\s\S]*?\/\/ ОТВЕТИТЬ \(поддерживается Markdown\)[\s\S]*?<\/span>/gi,
       '<span class="font-mono text-[10px] tracking-widest text-gold">// ОТВЕТИТЬ)</span>'
-    );
-
-    body = body.replace(
-      /<style[\s\S]*?<\/style>/gi,
-      ""
     );
 
     body = body.replace(
