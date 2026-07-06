@@ -92,8 +92,6 @@ async function proxyApi(request) {
 // Аналог functions/[[path]].js
 async function proxyMain(request, incomingUrl) {
   const siteUrl = `${incomingUrl.protocol}//${incomingUrl.host}`;
-  const image =
-    "https://github.com/Rusmer/regruha/blob/main/functions/favicon.png?raw=true";
   const title = "Regruha — T-Regruha";
   const description = "Regruha / T-Regruha — официальный сайт проекта.";
 
