@@ -4,6 +4,6 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "htmlrewriter": "^0.0.13"
+    "@worker-tools/html-rewriter": "0.1.0-pre.19"
   }
 }
