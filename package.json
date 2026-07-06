@@ -1,0 +1,9 @@
+{
+  "name": "regruha-proxy",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "htmlrewriter": "^0.1.0"
+  }
+}
