@@ -3,8 +3,13 @@ export const config = {
 };
 
 export default async function handler(request) {
+  const incoming = new URL(request.url);
+
   const url = new URL(request.url);
   url.hostname = "regruha-terminal-core.base44.app";
+  url.protocol = "https:";
+  url.pathname = incoming.pathname.replace(/^\/api/, "");
+  url.search = incoming.search;
 
   const res = await fetch(url.toString(), {
     method: request.method,
@@ -13,24 +18,9 @@ export default async function handler(request) {
     redirect: "manual",
   });
 
-  const contentType = res.headers.get("content-type") || "";
-  let body = await res.text();
-
-  if (contentType.includes("text/html")) {
-    body = body.replace(
-      /<\/head>/i,
-      `<style>
-        #base44-badge,
-        #base44-edit-badge {
-          display: none !important;
-        }
-      </style></head>`
-    );
-  }
-
   const headers = new Headers(res.headers);
 
-  return new Response(body, {
+  return new Response(await res.text(), {
     status: res.status,
     statusText: res.statusText,
     headers,
