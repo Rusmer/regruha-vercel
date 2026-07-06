@@ -1,11 +1,8 @@
-import { HTMLRewriter } from "htmlrewriter";
+import { HTMLRewriter } from "@worker-tools/html-rewriter/base64";
 
 // Перехватываем вообще все пути (аналог functions/[[path]].js + functions/api/[[path]].js)
-// runtime: "nodejs" обязателен — пакет htmlrewriter читает .wasm с диска,
-// а в Edge Runtime файловой системы нет.
 export const config = {
   matcher: "/:path*",
-  runtime: "nodejs",
 };
 
 export default async function middleware(request) {
