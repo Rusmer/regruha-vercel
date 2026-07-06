@@ -1,9 +1,5 @@
 {
   "rewrites": [
-    { "source": "/google14337db78de6911c.html", "destination": "/api/handler" },
-    { "source": "/robots.txt", "destination": "/api/handler" },
-    { "source": "/sitemap.xml", "destination": "/api/handler" },
-    { "source": "/api/apps/:path*", "destination": "/api/apps/:path*" },
-    { "source": "/(.*)", "destination": "/api/handler" }
+    { "source": "/(.*)", "destination": "/api/[[...path]]" }
   ]
 }
