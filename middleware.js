@@ -139,14 +139,14 @@ async function proxyMain(request, incomingUrl) {
     .on('label.font-mono.text-\\[9px\\].tracking-widest.text-zinc-data', {
       element(el) {
         if (el.textContent?.trim() === "РЕЙТИНГ") {
-          el.setInnerContent("РЕЙТИНГ METACRITIC");
+          el.setInnerContent("ОЦЕНКА METACRITIC");
         }
       },
     })
     .on('div.min-w-0 > div.font-mono.text-\\[9px\\].tracking-widest.text-zinc-data', {
       element(el) {
         if (el.textContent?.trim() === "РЕЙТИНГ") {
-          el.setInnerContent("РЕЙТИНГ METACRITIC");
+          el.setInnerContent("ОЦЕНКА METACRITIC");
         }
       },
     })
@@ -195,13 +195,13 @@ async function proxyMain(request, incomingUrl) {
 
                 document.querySelectorAll('label.font-mono.text-\\\\[9px\\\\].tracking-widest.text-zinc-data').forEach(el => {
                   if (el.textContent && el.textContent.trim() === 'РЕЙТИНГ') {
-                    el.textContent = 'РЕЙТИНГ METACRITIC';
+                    el.textContent = 'ОЦЕНКА METACRITIC';
                   }
                 });
 
                 document.querySelectorAll('div.min-w-0 > div.font-mono.text-\\\\[9px\\\\].tracking-widest.text-zinc-data').forEach(el => {
                   if (el.textContent && el.textContent.trim() === 'РЕЙТИНГ') {
-                    el.textContent = 'РЕЙТИНГ METACRITIC';
+                    el.textContent = 'ОЦЕНКА METACRITIC';
                   }
                 });
 
