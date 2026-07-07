@@ -143,6 +143,11 @@ async function proxyMain(request, incomingUrl) {
         }
       },
     })
+    .on('input[placeholder="PEGI 18 / 18+"]', {
+      element(el) {
+        el.setAttribute("placeholder", "7.2/10");
+      },
+    })
     .on("head", {
       element(el) {
         el.prepend(
@@ -185,6 +190,10 @@ async function proxyMain(request, incomingUrl) {
                   if (el.textContent && el.textContent.trim() === 'РЕЙТИНГ') {
                     el.textContent = 'РЕЙТИНГ METACRITIC';
                   }
+                });
+
+                document.querySelectorAll('input[placeholder="PEGI 18 / 18+"]').forEach(el => {
+                  el.setAttribute('placeholder', '7.2/10');
                 });
 
                 document.querySelectorAll('textarea').forEach(el => {
