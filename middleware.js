@@ -9,14 +9,12 @@ export default async function middleware(request) {
   const incomingUrl = new URL(request.url);
   const pathname = incomingUrl.pathname;
 
-  // ---- google-site-verification ----
   if (pathname === "/google14337db78de6911c.html") {
     return new Response("google-site-verification: google14337db78de6911c.html", {
       headers: { "content-type": "text/html; charset=utf-8" },
     });
   }
 
-  // ---- robots.txt ----
   if (pathname === "/robots.txt") {
     const siteUrl = `${incomingUrl.protocol}//${incomingUrl.host}`;
     const body = `User-agent: *
@@ -28,7 +26,6 @@ Sitemap: ${siteUrl}/sitemap.xml`;
     });
   }
 
-  // ---- sitemap.xml ----
   if (pathname === "/sitemap.xml") {
     const siteUrl = `${incomingUrl.protocol}//${incomingUrl.host}`;
     const body = `<?xml version="1.0" encoding="UTF-8"?>
@@ -43,19 +40,13 @@ Sitemap: ${siteUrl}/sitemap.xml`;
     });
   }
 
-  // ---- /api/* — раньше это был отдельный functions/api/[[path]].js ----
-  // В Cloudflare Pages более специфичный маршрут /api/[[path]].js перекрывал
-  // общий [[path]].js для путей /api/*, поэтому здесь та же логика вынесена
-  // в отдельную ветку с приоритетом.
   if (pathname.startsWith("/api/")) {
     return proxyApi(request);
   }
 
-  // ---- всё остальное — основной прокси с SEO-переписыванием head ----
   return proxyMain(request, incomingUrl);
 }
 
-// Аналог functions/api/[[path]].js
 async function proxyApi(request) {
   const url = new URL(request.url);
   url.hostname = "regruha-terminal-core.base44.app";
@@ -89,7 +80,6 @@ async function proxyApi(request) {
     .transform(res);
 }
 
-// Аналог functions/[[path]].js
 async function proxyMain(request, incomingUrl) {
   const siteUrl = `${incomingUrl.protocol}//${incomingUrl.host}`;
   const image =
@@ -136,16 +126,20 @@ async function proxyMain(request, incomingUrl) {
     })
     .on("textarea", {
       element(el) {
-        const placeholder = el.getAttribute("placeholder");
-        if (placeholder && placeholder.includes("Напишите ответ...")) {
-          el.setAttribute("placeholder", "Напишите ответ...");
-        }
+        el.setAttribute("placeholder", "Напишите ответ...");
       },
     })
     .on('span.font-mono.text-\\[10px\\].tracking-widest.text-gold', {
       element(el) {
         if (el.textContent.includes("// ОТВЕТИТЬ (поддерживается Markdown)")) {
           el.setInnerContent("// ОТВЕТИТЬ)");
+        }
+      },
+    })
+    .on('div.min-w-0 > div.font-mono.text-\\[9px\\].tracking-widest.text-zinc-data', {
+      element(el) {
+        if (el.textContent?.trim() === "РЕЙТИНГ") {
+          el.setInnerContent("РЕЙТИНГ METACRITIC");
         }
       },
     })
@@ -159,7 +153,6 @@ async function proxyMain(request, incomingUrl) {
               display: none !important;
             }
 
-            /* Скрываем кнопку Google и разделитель "or" через CSS */
             button:has(svg path[fill="#4285F4"]),
             div.uppercase:has(span) {
               display: none !important;
@@ -174,22 +167,33 @@ async function proxyMain(request, incomingUrl) {
 
           <script>
             (function() {
-              const hideElements = () => {
+              const replaceStuff = () => {
                 document.querySelectorAll('button').forEach(btn => {
                   if (btn.textContent && btn.textContent.includes('Continue with Google')) {
                     btn.style.setProperty('display', 'none', 'important');
                   }
                 });
+
                 document.querySelectorAll('div.uppercase span').forEach(span => {
                   if (span.textContent && span.textContent.trim() === 'or') {
                     const parentDiv = span.closest('div.relative');
                     if (parentDiv) parentDiv.style.setProperty('display', 'none', 'important');
                   }
                 });
+
+                document.querySelectorAll('div.min-w-0 > div.font-mono.text-\\\\[9px\\\\].tracking-widest.text-zinc-data').forEach(el => {
+                  if (el.textContent && el.textContent.trim() === 'РЕЙТИНГ') {
+                    el.textContent = 'РЕЙТИНГ METACRITIC';
+                  }
+                });
+
+                document.querySelectorAll('textarea').forEach(el => {
+                  el.setAttribute('placeholder', 'Напишите ответ...');
+                });
               };
 
-              hideElements();
-              new MutationObserver(hideElements).observe(document.documentElement, {
+              replaceStuff();
+              new MutationObserver(replaceStuff).observe(document.documentElement, {
                 childList: true,
                 subtree: true
               });
