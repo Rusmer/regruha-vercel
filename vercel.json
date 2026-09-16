@@ -22,7 +22,7 @@
     "api/backend/[...path].js": {
       "maxDuration": 60
     },
-    "api/apps/auth/login.js": {
+    "api/apps/auth/login-handler.js": {
       "maxDuration": 30
     }
   }
