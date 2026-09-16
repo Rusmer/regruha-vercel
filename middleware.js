@@ -1,6 +1,5 @@
 import { HTMLRewriter } from "@worker-tools/html-rewriter/base64";
 
-// Перехватываем вообще все пути (аналог functions/[[path]].js + functions/api/[[path]].js)
 export const config = {
   matcher: "/:path*",
 };
@@ -21,6 +20,7 @@ export default async function middleware(request) {
 Allow: /
 
 Sitemap: ${siteUrl}/sitemap.xml`;
+
     return new Response(body, {
       headers: { "content-type": "text/plain; charset=utf-8" },
     });
@@ -35,6 +35,7 @@ Sitemap: ${siteUrl}/sitemap.xml`;
     <lastmod>${new Date().toISOString().split("T")[0]}</lastmod>
   </url>
 </urlset>`;
+
     return new Response(body, {
       headers: { "content-type": "application/xml; charset=utf-8" },
     });
@@ -49,7 +50,21 @@ Sitemap: ${siteUrl}/sitemap.xml`;
 
 async function proxyApi(request) {
   const url = new URL(request.url);
+
   url.hostname = "regruha-terminal-core.base44.app";
+
+  // НОВОЕ:
+  // Исправляем OAuth login, чтобы Base44 не получал pages.dev/vercel
+  // как from_url.
+  if (
+    url.pathname === "/api/apps/auth/login" &&
+    url.searchParams.has("from_url")
+  ) {
+    url.searchParams.set(
+      "from_url",
+      "https://regruha-terminal-core.base44.app/"
+    );
+  }
 
   const res = await fetch(url.toString(), {
     method: request.method,
@@ -82,12 +97,16 @@ async function proxyApi(request) {
 
 async function proxyMain(request, incomingUrl) {
   const siteUrl = `${incomingUrl.protocol}//${incomingUrl.host}`;
+
   const image =
     "https://github.com/Rusmer/regruha/blob/main/functions/favicon.png?raw=true";
+
   const title = "Regruha — T-Regruha";
-  const description = "Regruha / T-Regruha — официальный сайт проекта.";
+  const description =
+    "Regruha / T-Regruha — официальный сайт проекта.";
 
   const url = new URL(request.url);
+
   url.hostname = "regruha-terminal-core.base44.app";
   url.searchParams.set("v", "2");
 
@@ -111,6 +130,8 @@ async function proxyMain(request, incomingUrl) {
   };
 
   const rewritten = new HTMLRewriter()
+
+    // Удаляем старые favicon/canonical/description
     .on(
       'link[rel="icon"], link[rel="shortcut icon"], link[rel="apple-touch-icon"], link[rel="canonical"], meta[name="description"]',
       {
@@ -119,49 +140,90 @@ async function proxyMain(request, incomingUrl) {
         },
       }
     )
+
+    // Удаляем старый title
     .on("title", {
       element(el) {
         el.remove();
       },
     })
+
+    // НОВОЕ ИЗ CLOUDFLARE:
+    // удаляем разделитель
+    .on("div.w-full.border-t.border-border", {
+      element(el) {
+        el.remove();
+      },
+    })
+
+    // Placeholder ответа
     .on("textarea", {
       element(el) {
         el.setAttribute("placeholder", "Напишите ответ...");
       },
     })
-    .on('span.font-mono.text-\\[10px\\].tracking-widest.text-gold', {
-      element(el) {
-        if (el.textContent.includes("// ОТВЕТИТЬ (поддерживается Markdown)")) {
-          el.setInnerContent("// ОТВЕТИТЬ)");
-        }
-      },
-    })
-    .on('label.font-mono.text-\\[9px\\].tracking-widest.text-zinc-data', {
-      element(el) {
-        if (el.textContent?.trim() === "РЕЙТИНГ") {
-          el.setInnerContent("ОЦЕНКА METACRITIC");
-        }
-      },
-    })
-    .on('div.min-w-0 > div.font-mono.text-\\[9px\\].tracking-widest.text-zinc-data', {
-      element(el) {
-        if (el.textContent?.trim() === "РЕЙТИНГ") {
-          el.setInnerContent("ОЦЕНКА METACRITIC");
-        }
-      },
-    })
-    .on('div.absolute.top-0.right-0.bg-gold.text-\\[\\#050505\\].font-mono.text-\\[10px\\].font-bold.tracking-widest.px-3.py-1.z-20', {
-      element(el) {
-        if (el.textContent?.trim() === "ОЖИДАЕМЫЙ РЕЛИЗ") {
-          el.setInnerContent("ИЗБРАННОЕ");
-        }
-      },
-    })
+
+    // // ОТВЕТИТЬ...
+    .on(
+      "span.font-mono.text-\\[10px\\].tracking-widest.text-gold",
+      {
+        element(el) {
+          if (
+            el.textContent &&
+            el.textContent.includes(
+              "// ОТВЕТИТЬ (поддерживается Markdown)"
+            )
+          ) {
+            el.setInnerContent("// ОТВЕТИТЬ)");
+          }
+        },
+      }
+    )
+
+    // РЕЙТИНГ -> ОЦЕНКА METACRITIC
+    .on(
+      "div.min-w-0 > div.font-mono.text-\\[9px\\].tracking-widest.text-zinc-data",
+      {
+        element(el) {
+          if (el.textContent?.trim() === "РЕЙТИНГ") {
+            el.setInnerContent("ОЦЕНКА METACRITIC");
+          }
+        },
+      }
+    )
+
+    // НОВОЕ ИЗ CLOUDFLARE:
+    // дополнительный label с классом block mb-1
+    .on(
+      "label.font-mono.text-\\[9px\\].tracking-widest.text-zinc-data.block.mb-1",
+      {
+        element(el) {
+          if (el.textContent?.trim() === "РЕЙТИНГ") {
+            el.setInnerContent("ОЦЕНКА METACRITIC");
+          }
+        },
+      }
+    )
+
+    // ОЖИДАЕМЫЙ РЕЛИЗ -> ИЗБРАННОЕ
+    .on(
+      'div.absolute.top-0.right-0.bg-gold.text-\\[\\#050505\\].font-mono.text-\\[10px\\].font-bold.tracking-widest.px-3.py-1.z-20',
+      {
+        element(el) {
+          if (el.textContent?.trim() === "ОЖИДАЕМЫЙ РЕЛИЗ") {
+            el.setInnerContent("ИЗБРАННОЕ");
+          }
+        },
+      }
+    )
+
+    // PEGI -> рейтинг
     .on('input[placeholder="PEGI 18 / 18+"]', {
       element(el) {
         el.setAttribute("placeholder", "7.2/10");
       },
     })
+
     .on("head", {
       element(el) {
         el.prepend(
@@ -187,76 +249,234 @@ async function proxyMain(request, incomingUrl) {
           <script>
             (function() {
               const replaceStuff = () => {
+
+                // НОВОЕ:
+                // Удаляет разделитель даже если React
+                // добавит его динамически
+                document
+                  .querySelectorAll('div.w-full.border-t.border-border')
+                  .forEach(el => el.remove());
+
+                // Скрываем Continue with Google
                 document.querySelectorAll('button').forEach(btn => {
-                  if (btn.textContent && btn.textContent.includes('Continue with Google')) {
-                    btn.style.setProperty('display', 'none', 'important');
+                  if (
+                    btn.textContent &&
+                    btn.textContent.includes('Continue with Google')
+                  ) {
+                    btn.style.setProperty(
+                      'display',
+                      'none',
+                      'important'
+                    );
                   }
                 });
 
-                document.querySelectorAll('div.uppercase span').forEach(span => {
-                  if (span.textContent && span.textContent.trim() === 'or') {
-                    const parentDiv = span.closest('div.relative');
-                    if (parentDiv) parentDiv.style.setProperty('display', 'none', 'important');
-                  }
-                });
+                // Скрываем "or"
+                document
+                  .querySelectorAll('div.uppercase span')
+                  .forEach(span => {
+                    if (
+                      span.textContent &&
+                      span.textContent.trim() === 'or'
+                    ) {
+                      const parentDiv =
+                        span.closest('div.relative');
 
-                document.querySelectorAll('label.font-mono.text-\\\\[9px\\\\].tracking-widest.text-zinc-data').forEach(el => {
-                  if (el.textContent && el.textContent.trim() === 'РЕЙТИНГ') {
-                    el.textContent = 'ОЦЕНКА METACRITIC';
-                  }
-                });
+                      if (parentDiv) {
+                        parentDiv.style.setProperty(
+                          'display',
+                          'none',
+                          'important'
+                        );
+                      }
+                    }
+                  });
 
-                document.querySelectorAll('div.min-w-0 > div.font-mono.text-\\\\[9px\\\\].tracking-widest.text-zinc-data').forEach(el => {
-                  if (el.textContent && el.textContent.trim() === 'РЕЙТИНГ') {
-                    el.textContent = 'ОЦЕНКА METACRITIC';
-                  }
-                });
+                // РЕЙТИНГ -> METACRITIC
+                document
+                  .querySelectorAll(
+                    'div.min-w-0 > div.font-mono.text-\\\\[9px\\\\].tracking-widest.text-zinc-data'
+                  )
+                  .forEach(el => {
+                    if (
+                      el.textContent &&
+                      el.textContent.trim() === 'РЕЙТИНГ'
+                    ) {
+                      el.textContent =
+                        'ОЦЕНКА METACRITIC';
+                    }
+                  });
 
-                document.querySelectorAll('div.absolute.top-0.right-0.bg-gold.text-\\\\[\\\\#050505\\\\].font-mono.text-\\\\[10px\\\\].font-bold.tracking-widest.px-3.py-1.z-20').forEach(el => {
-                  if (el.textContent && el.textContent.trim() === 'ОЖИДАЕМЫЙ РЕЛИЗ') {
-                    el.textContent = 'ИЗБРАННОЕ';
-                  }
-                });
+                // НОВОЕ:
+                // Второй вариант label
+                document
+                  .querySelectorAll(
+                    'label.font-mono.text-\\\\[9px\\\\].tracking-widest.text-zinc-data.block.mb-1'
+                  )
+                  .forEach(el => {
+                    if (
+                      el.textContent &&
+                      el.textContent.trim() === 'РЕЙТИНГ'
+                    ) {
+                      el.textContent =
+                        'ОЦЕНКА METACRITIC';
+                    }
+                  });
 
-                document.querySelectorAll('input[placeholder="PEGI 18 / 18+"]').forEach(el => {
-                  el.setAttribute('placeholder', '7.2/10');
-                });
+                // ОЖИДАЕМЫЙ РЕЛИЗ -> ИЗБРАННОЕ
+                document
+                  .querySelectorAll(
+                    'div.absolute.top-0.right-0.bg-gold.text-\\\\[\\\\#050505\\\\].font-mono.text-\\\\[10px\\\\].font-bold.tracking-widest.px-3.py-1.z-20'
+                  )
+                  .forEach(el => {
+                    if (
+                      el.textContent &&
+                      el.textContent.trim() ===
+                        'ОЖИДАЕМЫЙ РЕЛИЗ'
+                    ) {
+                      el.textContent = 'ИЗБРАННОЕ';
+                    }
+                  });
 
-                document.querySelectorAll('textarea').forEach(el => {
-                  el.setAttribute('placeholder', 'Напишите ответ...');
-                });
+                // Placeholder рейтинга
+                document
+                  .querySelectorAll(
+                    'input[placeholder="PEGI 18 / 18+"]'
+                  )
+                  .forEach(el => {
+                    el.setAttribute(
+                      'placeholder',
+                      '7.2/10'
+                    );
+                  });
+
+                // Placeholder textarea
+                document
+                  .querySelectorAll('textarea')
+                  .forEach(el => {
+                    el.setAttribute(
+                      'placeholder',
+                      'Напишите ответ...'
+                    );
+                  });
               };
 
               replaceStuff();
-              new MutationObserver(replaceStuff).observe(document.documentElement, {
-                childList: true,
-                subtree: true
-              });
+
+              new MutationObserver(replaceStuff).observe(
+                document.documentElement,
+                {
+                  childList: true,
+                  subtree: true
+                }
+              );
             })();
           </script>
 
           <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1">
-          <meta name="google-site-verification" content="google14337db78de6911c.html">
+
+          <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1"
+          >
+
+          <meta
+            name="google-site-verification"
+            content="google14337db78de6911c.html"
+          >
+
           <title>${title}</title>
-          <meta name="description" content="${description}">
-          <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
-          <meta name="googlebot" content="index, follow">
-          <link rel="canonical" href="${siteUrl}/">
-          <link rel="icon" type="image/png" href="${image}" sizes="32x32">
-          <link rel="shortcut icon" href="${image}">
-          <link rel="apple-touch-icon" href="${image}">
-          <meta property="og:site_name" content="Regruha">
-          <meta property="og:title" content="${title}">
-          <meta property="og:description" content="${description}">
-          <meta property="og:image" content="${image}">
-          <meta property="og:type" content="website">
-          <meta property="og:url" content="${siteUrl}/">
-          <meta name="twitter:card" content="summary_large_image">
-          <meta name="twitter:title" content="${title}">
-          <meta name="twitter:description" content="${description}">
-          <meta name="twitter:image" content="${image}">
-          <script type="application/ld+json">${JSON.stringify(jsonLd)}</script>
+
+          <meta
+            name="description"
+            content="${description}"
+          >
+
+          <meta
+            name="robots"
+            content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
+          >
+
+          <meta
+            name="googlebot"
+            content="index, follow"
+          >
+
+          <link
+            rel="canonical"
+            href="${siteUrl}/"
+          >
+
+          <link
+            rel="icon"
+            type="image/png"
+            href="${image}"
+            sizes="32x32"
+          >
+
+          <link
+            rel="shortcut icon"
+            href="${image}"
+          >
+
+          <link
+            rel="apple-touch-icon"
+            href="${image}"
+          >
+
+          <meta
+            property="og:site_name"
+            content="Regruha"
+          >
+
+          <meta
+            property="og:title"
+            content="${title}"
+          >
+
+          <meta
+            property="og:description"
+            content="${description}"
+          >
+
+          <meta
+            property="og:image"
+            content="${image}"
+          >
+
+          <meta
+            property="og:type"
+            content="website"
+          >
+
+          <meta
+            property="og:url"
+            content="${siteUrl}/"
+          >
+
+          <meta
+            name="twitter:card"
+            content="summary_large_image"
+          >
+
+          <meta
+            name="twitter:title"
+            content="${title}"
+          >
+
+          <meta
+            name="twitter:description"
+            content="${description}"
+          >
+
+          <meta
+            name="twitter:image"
+            content="${image}"
+          >
+
+          <script type="application/ld+json">
+            ${JSON.stringify(jsonLd)}
+          </script>
         `,
           { html: true }
         );
@@ -265,10 +485,15 @@ async function proxyMain(request, incomingUrl) {
     .transform(response);
 
   const newHeaders = new Headers(rewritten.headers);
+
   newHeaders.delete("x-robots-tag");
   newHeaders.delete("x-frame-options");
   newHeaders.delete("content-security-policy");
-  newHeaders.set("content-security-policy", "frame-ancestors *;");
+
+  newHeaders.set(
+    "content-security-policy",
+    "frame-ancestors *;"
+  );
 
   return new Response(rewritten.body, {
     status: rewritten.status,
