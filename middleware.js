@@ -51,7 +51,7 @@ Sitemap: ${siteUrl}/sitemap.xml`;
 async function proxyApi(request) {
   const url = new URL(request.url);
 
-  url.hostname = "regruha-terminal-core.base44.app";
+  url.hostname = "regruha.base44.app";
 
   // НОВОЕ:
   // Исправляем OAuth login, чтобы Base44 не получал pages.dev/vercel
@@ -62,7 +62,7 @@ async function proxyApi(request) {
   ) {
     url.searchParams.set(
       "from_url",
-      "https://regruha-terminal-core.base44.app/"
+      "https://regruha.base44.app/"
     );
   }
 
@@ -107,7 +107,7 @@ async function proxyMain(request, incomingUrl) {
 
   const url = new URL(request.url);
 
-  url.hostname = "regruha-terminal-core.base44.app";
+  url.hostname = "regruha.base44.app";
   url.searchParams.set("v", "2");
 
   const response = await fetch(url.toString(), {
