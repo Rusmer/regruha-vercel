@@ -1,5 +1,9 @@
 {
-  "name": "regruha-vercel",
+  "name": "regruha-proxy",
+  "version": "1.0.0",
   "private": true,
-  "version": "1.0.0"
+  "type": "module",
+  "dependencies": {
+    "@worker-tools/html-rewriter": "0.1.0-pre.19"
+  }
 }
