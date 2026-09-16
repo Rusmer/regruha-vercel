@@ -1,0 +1,28 @@
+{
+  "version": 2,
+  "rewrites": [
+    {
+      "source": "/api/apps/auth/login",
+      "destination": "/api/apps/auth/login.js"
+    },
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/backend/$1"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/api/site/$1"
+    }
+  ],
+  "functions": {
+    "api/site/[...path].js": {
+      "maxDuration": 60
+    },
+    "api/backend/[...path].js": {
+      "maxDuration": 60
+    },
+    "api/apps/auth/login.js": {
+      "maxDuration": 30
+    }
+  }
+}
