@@ -1,9 +1,0 @@
-# dependencies
-node_modules/
-
-# vercel
-.vercel/
-
-# logs / os
-*.log
-.DS_Store
