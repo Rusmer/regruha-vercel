@@ -1,0 +1,17 @@
+{
+  "name": "regruha-mirror",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Regruha / T-Regruha mirror — Vercel Functions port of the Cloudflare Pages functions.",
+  "engines": {
+    "node": "22.x"
+  },
+  "dependencies": {
+    "cheerio": "^1.0.0"
+  },
+  "scripts": {
+    "test": "node test/local.test.mjs",
+    "dev": "vercel dev"
+  }
+}
